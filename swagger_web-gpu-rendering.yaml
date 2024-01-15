@@ -1,0 +1,258 @@
+openapi: 3.0.3
+info:
+  title: Web GPU rendering API
+  description: Backend send events to frontend through Server Side Event technology (described in the schemas section)
+  version: 1.0.0
+paths:
+  /connect:
+    get:
+      summary: Must be called once by client before /upload request(s)
+      responses:
+        '200':
+          description: successful operation
+  /upload:
+    post:
+      summary: Upload file with parameters
+      parameters:
+        - name: params
+          in: body
+          description: Job parameters (stringified Json)
+          required: true
+          schema:
+            type: string                           # <-------
+            example: '{"clientid":1700672309993,"subnettag":"public","paymentdriver":"erc20","paymentnetwork":"goerli","memory":8,"storage":1,"threads":4,"workers":3,"budget":1,"startprice":1000,"cpuprice":1000,"envprice":1000,"timeoutglobal":4,"timeoutupload":5,"timeoutrender":5,"format":"PNG","startframe":1,"stopframe":3,"stepframe":1,"idx":"\\"1700672314146-0\\"","walletaddress":""}'
+        - name: files
+          in: body
+          description: Blender file
+          required: true
+          schema:
+            type: fileField
+            example: '{
+              name: "cubes.blend",
+              data: <Buffer 42 4c 45 4e 44 45 52 2d 76 33 30 35 52 45 4e 44 48 00 00 00 b0 29 8e 25 ff 7f 00 00 00 00 00 00 01 00 00 00 01 00 00 00 03 00 00 00 53 63 65 6e 65 00 ... 579314 more bytes>,
+              size: 579364,
+              encoding: "7bit",
+              tempFilePath: "",
+              truncated: false,
+              mimetype: "application/x-blender",
+              md5: "3e0eaaae48c7c4596ce96d2ee50e92b3",
+              mv: [Function: mv]
+            }'
+      responses:
+        '200':
+          description: successful operation
+        '422':
+          description: malformed or invalid parameters
+  /download:
+    get:
+      summary: Download job archive
+      parameters:
+        - name: filename
+          in: query
+          description: relative backend filepath ${clientid}/${jobuuid}/${clientid}_${jobuuid}.zip
+          required: true
+          schema:
+            type: string                           # <-------
+            example: '1700932112652/1700932116934/1700932112652_1700932116934.zip'
+      responses:
+        '200':
+          description: successful operation
+        '422':
+          description: malformed or invalid parameters
+components:
+  schemas:
+    Event_CONNECTED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'CONNECTED'
+        clientId:
+          type: number
+          example: 1700932112652
+    Event_AGREEMENT_CREATED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'AGREEMENT_CREATED'
+        agreementId:
+          type: string
+          example: 'f5e7e69c0c71634e1a4e63302a4440707833e08700de8da63203404d4109a5c3'
+        providerId:
+          type: string
+          example: '0xc3442b15689d7a0d0fb19eba364add332c452521'
+        providerName:
+          type: string
+          example: 'm4'
+    Event_AGREEMENT_CONFIRMED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'AGREEMENT_CONFIRMED'
+        agreementId:
+          type: string
+          example: 'f5e7e69c0c71634e1a4e63302a4440707833e08700de8da63203404d4109a5c3'
+    Event_DEPLOYMENT_FINISHED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'DEPLOYMENT_FINISHED'
+        agreementId:
+          type: string
+          example: 'f5e7e69c0c71634e1a4e63302a4440707833e08700de8da63203404d4109a5c3'
+        deployment_time:
+          type: number
+          example: 7438
+    Event_UPLOAD_FINISHED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'UPLOAD_FINISHED'
+        agreementId:
+          type: string
+          example: 'f5e7e69c0c71634e1a4e63302a4440707833e08700de8da63203404d4109a5c3'
+        upload_time:
+          type: number
+          example: 6849
+    Event_RENDER_FRAME_FINISHED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'RENDER_FRAME_FINISHED'
+        frame:
+          type: number
+          example: 1
+        renderFrameTime:
+          type: number
+          example: 135
+    Event_AGREEMENT_TERMINATED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'AGREEMENT_TERMINATED'
+        agreementId:
+          type: string
+          example: 'f5e7e69c0c71634e1a4e63302a4440707833e08700de8da63203404d4109a5c3'
+        providerId:
+          type: string
+          example: '0xc3442b15689d7a0d0fb19eba364add332c452521'
+    Event_INVOICE_RECEIVED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'INVOICE_RECEIVED'
+        agreementId:
+          type: string
+          example: 'f5e7e69c0c71634e1a4e63302a4440707833e08700de8da63203404d4109a5c3'
+        providerId:
+          type: string
+          example: '0xc3442b15689d7a0d0fb19eba364add332c452521'
+        amount:
+          type: string
+          example: "0.003889987238472222"
+    Event_JOB_FINISHED:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'JOB_FINISHED'
+        clientId:
+          type: number
+          example: 1700932112652
+        jobUuid:
+          type: number
+          example: 1700932116934
+        jobIndex:
+          type: string
+          example: "1700932115169-0"
+    Event_WHITE_BLACK_LIST_ERROR:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'WHITE_BLACK_LIST_ERROR'
+        errorMessage:
+          type: string
+          example: "incompatible white/black-lists"
+        jobIndex:
+          type: string
+          example: "1701014250229-0"
+    Event_INTERNAL_ERROR_1:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'INTERNAL_ERROR_1'
+        errorMessage:
+          type: string
+          example: "internal error 1"
+        jobIndex:
+          type: string
+          example: "1701014250229-0"
+    Event_INTERNAL_ERROR_2:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'INTERNAL_ERROR_2'
+        errorMessage:
+          type: string
+          example: "internal error 2"
+        jobIndex:
+          type: string
+          example: "1701014250229-0"
+    Event_INVALID_BLEND_FILE:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'INVALID_BLEND_FILE'
+        errorMessage:
+          type: string
+          example: "invalid blender file"
+        jobIndex:
+          type: string
+          example: "1701014250229-0"
+    Event_START_FRAME_ERROR:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'START_FRAME_ERROR'
+        errorMessage:
+          type: string
+          example: "start frame must be between ${start} and ${end}"
+        jobIndex:
+          type: string
+          example: "1701014250229-0"
+    Event_STOP_FRAME_ERROR:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'STOP_FRAME_ERROR'
+        errorMessage:
+          type: string
+          example: "stop frame must be between ${start} and ${end}"
+        jobIndex:
+          type: string
+          example: "1701014250229-0"
+    Event_START_STOP_FRAME_ERROR:
+      type: object
+      properties:
+        event:
+          type: string
+          default: 'START_STOP_FRAME_ERROR'
+        errorMessage:
+          type: string
+          example: "start frame must be < stop frame"
+        jobIndex:
+          type: string
+          example: "1701014250229-0"
